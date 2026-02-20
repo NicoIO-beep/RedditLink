@@ -118,7 +118,10 @@
         const data = await res.json();
         showPreview(data);
       } catch {
-        // Kein Fehler anzeigen — vielleicht tippt der User noch
+        // Vorschau nicht verfügbar — trotzdem Download erlauben
+        document.getElementById("qualityRow").classList.remove("hidden");
+        document.getElementById("downloadBtn").disabled = false;
+        infoLoaded = true;
       } finally {
         showPreviewLoading(false);
       }
