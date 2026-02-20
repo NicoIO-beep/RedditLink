@@ -72,6 +72,8 @@ def download_video(url: str, quality: str, job: Job) -> str:
         "quiet": True,
         "no_warnings": True,
         "progress_hooks": [make_progress_hook(job)],
+        # MP4/M4A bevorzugen — verbessert Kompatibilität bei YouTube
+        "format_sort": ["ext:mp4:m4a"],
     }
 
     if is_audio:
