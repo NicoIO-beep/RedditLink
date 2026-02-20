@@ -19,6 +19,9 @@ out/
 .next/
 .nuxt/
 
+# Claude Code
+.claude/
+
 # Editors & OS
 .idea/
 .vscode/settings.json
