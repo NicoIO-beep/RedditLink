@@ -8,97 +8,233 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex items-center justify-center p-4">
 
-  <div class="w-full max-w-lg space-y-6">
+  <div class="w-full max-w-lg space-y-4">
 
     <!-- Header -->
     <div class="text-center space-y-1">
       <h1 class="text-3xl font-bold tracking-tight">RedditLink</h1>
-      <p class="text-zinc-400 text-sm">Reddit-Video als MP4 runterladen</p>
+      <p class="text-zinc-500 text-sm">Reddit · YouTube · Twitter/X</p>
     </div>
 
-    <!-- Input Card -->
+    <!-- Main Card -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+
+      <!-- URL Input -->
       <input
         id="urlInput"
         type="url"
-        placeholder="https://www.reddit.com/r/..."
+        placeholder="URL hier einfügen..."
         class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3
                text-sm placeholder-zinc-500 focus:outline-none focus:ring-2
                focus:ring-orange-500 transition"
       />
 
+      <!-- Preview (hidden until info loaded) -->
+      <div id="preview" class="hidden flex gap-3 items-start">
+        <img id="previewThumb" src="" alt="" class="w-24 h-16 object-cover rounded-lg flex-shrink-0 bg-zinc-800" />
+        <div class="min-w-0">
+          <p id="previewTitle" class="text-sm font-medium leading-snug line-clamp-2"></p>
+          <p id="previewMeta" class="text-xs text-zinc-400 mt-1"></p>
+        </div>
+      </div>
+
+      <!-- Preview loading state -->
+      <div id="previewLoading" class="hidden text-xs text-zinc-500 text-center py-1">
+        Lade Videoinfos...
+      </div>
+
+      <!-- Quality selector (hidden until preview loaded) -->
+      <div id="qualityRow" class="hidden flex items-center gap-3">
+        <label class="text-xs text-zinc-400 flex-shrink-0">Qualität</label>
+        <select
+          id="qualitySelect"
+          class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2
+                 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+        >
+          <option value="best">Beste verfügbare</option>
+          <option value="1080p">1080p</option>
+          <option value="720p">720p</option>
+          <option value="480p">480p</option>
+          <option value="audio">Nur Audio (MP3)</option>
+        </select>
+      </div>
+
+      <!-- Download Button -->
       <button
         id="downloadBtn"
         onclick="startDownload()"
+        disabled
         class="w-full bg-orange-500 hover:bg-orange-400 active:bg-orange-600
                text-white font-semibold rounded-xl py-3 text-sm transition
-               disabled:opacity-50 disabled:cursor-not-allowed"
+               disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Download
       </button>
 
-      <!-- Status -->
-      <div id="status" class="hidden text-sm text-center"></div>
+      <!-- Progress -->
+      <div id="progressSection" class="hidden space-y-2">
+        <div class="w-full bg-zinc-800 rounded-full h-2 overflow-hidden">
+          <div
+            id="progressBar"
+            class="h-2 bg-orange-500 rounded-full transition-all duration-300"
+            style="width: 0%"
+          ></div>
+        </div>
+        <p id="progressMsg" class="text-xs text-zinc-400 text-center"></p>
+      </div>
+
     </div>
 
-    <!-- Footer -->
-    <p class="text-center text-zinc-600 text-xs">Läuft lokal — keine Daten werden gespeichert</p>
+    <p class="text-center text-zinc-600 text-xs">Läuft lokal · keine Daten werden gespeichert</p>
   </div>
 
   <script>
-    async function startDownload() {
-      const input = document.getElementById("urlInput");
-      const btn = document.getElementById("downloadBtn");
-      const status = document.getElementById("status");
+    let infoDebounce = null;
+    let infoLoaded = false;
 
-      const url = input.value.trim();
+    // ── URL Input: Vorschau automatisch laden ──────────────────────────────
+
+    document.getElementById("urlInput").addEventListener("input", () => {
+      clearTimeout(infoDebounce);
+      resetPreview();
+      const url = document.getElementById("urlInput").value.trim();
       if (!url) return;
+      infoDebounce = setTimeout(() => loadInfo(url), 800);
+    });
 
-      // UI: Ladezustand
-      btn.disabled = true;
-      btn.textContent = "Wird heruntergeladen...";
-      status.className = "text-sm text-center text-zinc-400";
-      status.textContent = "yt-dlp lädt Video + Audio, FFmpeg mergt...";
-      status.classList.remove("hidden");
+    document.getElementById("urlInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && infoLoaded) startDownload();
+    });
 
+    async function loadInfo(url) {
+      showPreviewLoading(true);
       try {
-        const response = await fetch("/download", {
+        const res = await fetch("/info", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url }),
         });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.detail || "Unbekannter Fehler");
-        }
-
-        // Blob empfangen und als Datei-Download triggern
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = blobUrl;
-        a.download = "reddit_video.mp4";
-        a.click();
-        URL.revokeObjectURL(blobUrl);
-
-        status.className = "text-sm text-center text-green-400";
-        status.textContent = "Fertig! Download gestartet.";
-        input.value = "";
-
-      } catch (err) {
-        status.className = "text-sm text-center text-red-400";
-        status.textContent = "Fehler: " + err.message;
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        showPreview(data);
+      } catch {
+        // Kein Fehler anzeigen — vielleicht tippt der User noch
       } finally {
-        btn.disabled = false;
-        btn.textContent = "Download";
+        showPreviewLoading(false);
       }
     }
 
-    // Enter-Taste triggert Download
-    document.getElementById("urlInput").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") startDownload();
-    });
+    function showPreview(data) {
+      document.getElementById("previewThumb").src = data.thumbnail || "";
+      document.getElementById("previewTitle").textContent = data.title || "";
+      const duration = data.duration ? formatDuration(data.duration) : "";
+      const uploader = data.uploader || "";
+      document.getElementById("previewMeta").textContent = [uploader, duration].filter(Boolean).join(" · ");
+
+      document.getElementById("preview").classList.remove("hidden");
+      document.getElementById("qualityRow").classList.remove("hidden");
+      document.getElementById("downloadBtn").disabled = false;
+      infoLoaded = true;
+    }
+
+    function showPreviewLoading(show) {
+      document.getElementById("previewLoading").classList.toggle("hidden", !show);
+    }
+
+    function resetPreview() {
+      infoLoaded = false;
+      document.getElementById("preview").classList.add("hidden");
+      document.getElementById("qualityRow").classList.add("hidden");
+      document.getElementById("previewLoading").classList.add("hidden");
+      document.getElementById("progressSection").classList.add("hidden");
+      document.getElementById("downloadBtn").disabled = true;
+    }
+
+    // ── Download + SSE Progress ────────────────────────────────────────────
+
+    async function startDownload() {
+      const url = document.getElementById("urlInput").value.trim();
+      const quality = document.getElementById("qualitySelect").value;
+      const btn = document.getElementById("downloadBtn");
+
+      btn.disabled = true;
+      showProgress(0, "Startet...");
+      document.getElementById("progressSection").classList.remove("hidden");
+
+      try {
+        // 1. Job starten
+        const res = await fetch("/download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, quality }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || "Fehler beim Starten");
+        }
+        const { job_id } = await res.json();
+
+        // 2. SSE: Fortschritt verfolgen
+        await followProgress(job_id);
+
+        // 3. Datei herunterladen
+        triggerDownload(job_id);
+
+      } catch (err) {
+        showProgress(0, "Fehler: " + err.message, true);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function followProgress(jobId) {
+      return new Promise((resolve, reject) => {
+        const es = new EventSource(`/progress/${jobId}`);
+        es.onmessage = (e) => {
+          const data = JSON.parse(e.data);
+          if (data.status === "done") {
+            showProgress(100, "Fertig! Download startet...");
+            es.close();
+            resolve();
+          } else if (data.status === "error") {
+            es.close();
+            reject(new Error(data.error || "Unbekannter Fehler"));
+          } else {
+            showProgress(data.progress, data.message);
+          }
+        };
+        es.onerror = () => {
+          es.close();
+          reject(new Error("Verbindung zum Server verloren"));
+        };
+      });
+    }
+
+    function triggerDownload(jobId) {
+      const a = document.createElement("a");
+      a.href = `/file/${jobId}`;
+      a.click();
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    function showProgress(pct, msg, isError = false) {
+      document.getElementById("progressBar").style.width = pct + "%";
+      document.getElementById("progressBar").className =
+        "h-2 rounded-full transition-all duration-300 " +
+        (isError ? "bg-red-500" : "bg-orange-500");
+      document.getElementById("progressMsg").textContent = msg;
+      document.getElementById("progressMsg").className =
+        "text-xs text-center " + (isError ? "text-red-400" : "text-zinc-400");
+    }
+
+    function formatDuration(seconds) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = seconds % 60;
+      if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
   </script>
 </body>
 </html>
