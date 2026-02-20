@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 320px;
+      background: #18181b;
+      color: #f4f4f5;
+      font-family: system-ui, sans-serif;
+      font-size: 13px;
+      padding: 16px;
+    }
+    h1 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+
+    .url-box {
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #a1a1aa;
+      word-break: break-all;
+      margin-bottom: 12px;
+      min-height: 32px;
+    }
+    .url-box.unsupported { color: #f87171; }
+
+    select {
+      width: 100%;
+      background: #27272a;
+      border: 1px solid #3f3f46;
+      border-radius: 8px;
+      color: #f4f4f5;
+      padding: 7px 10px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      background: #f97316;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #fb923c; }
+    button:disabled { background: #78350f; cursor: not-allowed; opacity: 0.6; }
+
+    .progress-wrap {
+      display: none;
+      margin-top: 10px;
+      space-y: 4px;
+    }
+    .progress-bar-bg {
+      background: #27272a;
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 5px;
+    }
+    .progress-bar {
+      height: 6px;
+      background: #f97316;
+      border-radius: 99px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+    .progress-bar.error { background: #ef4444; }
+    .status {
+      font-size: 11px;
+      color: #a1a1aa;
+      text-align: center;
+    }
+    .status.error { color: #f87171; }
+
+    .server-warning {
+      display: none;
+      background: #7f1d1d;
+      border: 1px solid #dc2626;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #fca5a5;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>RedditLink</h1>
+
+  <div id="serverWarning" class="server-warning">
+    Server nicht erreichbar. Starte <code>start.bat</code> im Projektordner.
+  </div>
+
+  <div id="urlBox" class="url-box">Lade...</div>
+
+  <select id="quality">
+    <option value="best">Beste verfügbare</option>
+    <option value="1080p">1080p</option>
+    <option value="720p">720p</option>
+    <option value="480p">480p</option>
+    <option value="audio">Nur Audio (MP3)</option>
+  </select>
+
+  <button id="btn" disabled>Download</button>
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar-bg">
+      <div class="progress-bar" id="bar"></div>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

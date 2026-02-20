@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "RedditLink",
+  "version": "1.0",
+  "description": "Reddit, YouTube & Twitter/X Videos als MP4 herunterladen",
+  "permissions": ["activeTab"],
+  "host_permissions": ["http://127.0.0.1:8000/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "RedditLink"
+  }
+}

@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -39,6 +40,16 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="RedditLink", lifespan=lifespan)
+
+# CORS: nur Chrome-Extensions dürfen die API aufrufen.
+# allow_origins=["*"] wäre unsicher — jede Website könnte sonst Downloads triggern.
+# chrome-extension:// blockiert reguläre Webseiten komplett.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"chrome-extension://.*",
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type"],
+)
 
 
 # ── Request Models ────────────────────────────────────────────────────────────
