@@ -31,6 +31,10 @@ Thumbs.db
 *.log
 logs/
 
+# Temp-Downloads (Ordner bleibt via .gitkeep, Inhalt nicht)
+downloads/*
+!downloads/.gitkeep
+
 # Test coverage
 coverage/
 .coverage

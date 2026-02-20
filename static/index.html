@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RedditLink</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-lg space-y-6">
+
+    <!-- Header -->
+    <div class="text-center space-y-1">
+      <h1 class="text-3xl font-bold tracking-tight">RedditLink</h1>
+      <p class="text-zinc-400 text-sm">Reddit-Video als MP4 runterladen</p>
+    </div>
+
+    <!-- Input Card -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 space-y-4">
+      <input
+        id="urlInput"
+        type="url"
+        placeholder="https://www.reddit.com/r/..."
+        class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3
+               text-sm placeholder-zinc-500 focus:outline-none focus:ring-2
+               focus:ring-orange-500 transition"
+      />
+
+      <button
+        id="downloadBtn"
+        onclick="startDownload()"
+        class="w-full bg-orange-500 hover:bg-orange-400 active:bg-orange-600
+               text-white font-semibold rounded-xl py-3 text-sm transition
+               disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Download
+      </button>
+
+      <!-- Status -->
+      <div id="status" class="hidden text-sm text-center"></div>
+    </div>
+
+    <!-- Footer -->
+    <p class="text-center text-zinc-600 text-xs">Läuft lokal — keine Daten werden gespeichert</p>
+  </div>
+
+  <script>
+    async function startDownload() {
+      const input = document.getElementById("urlInput");
+      const btn = document.getElementById("downloadBtn");
+      const status = document.getElementById("status");
+
+      const url = input.value.trim();
+      if (!url) return;
+
+      // UI: Ladezustand
+      btn.disabled = true;
+      btn.textContent = "Wird heruntergeladen...";
+      status.className = "text-sm text-center text-zinc-400";
+      status.textContent = "yt-dlp lädt Video + Audio, FFmpeg mergt...";
+      status.classList.remove("hidden");
+
+      try {
+        const response = await fetch("/download", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.detail || "Unbekannter Fehler");
+        }
+
+        // Blob empfangen und als Datei-Download triggern
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = blobUrl;
+        a.download = "reddit_video.mp4";
+        a.click();
+        URL.revokeObjectURL(blobUrl);
+
+        status.className = "text-sm text-center text-green-400";
+        status.textContent = "Fertig! Download gestartet.";
+        input.value = "";
+
+      } catch (err) {
+        status.className = "text-sm text-center text-red-400";
+        status.textContent = "Fehler: " + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Download";
+      }
+    }
+
+    // Enter-Taste triggert Download
+    document.getElementById("urlInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") startDownload();
+    });
+  </script>
+</body>
+</html>
