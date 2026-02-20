@@ -1,48 +1,57 @@
 """Generiert die Extension-Icons (16, 48, 128px) — einmalig ausführen."""
 from PIL import Image, ImageDraw
-import os
+import os, math
 
 OUT = os.path.join(os.path.dirname(__file__), "extension")
 
-ORANGE = (249, 115, 22)   # #f97316
+BG     = (24, 24, 27)      # #18181b  (UI-Hintergrund)
+ORANGE = (249, 115, 22)    # #f97316
 WHITE  = (255, 255, 255)
 
 
 def make_icon(size: int) -> Image.Image:
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
+    d   = ImageDraw.Draw(img)
 
-    # Abgerundetes Rechteck (orange)
-    r = size // 6
-    d.rounded_rectangle([0, 0, size - 1, size - 1], radius=r, fill=ORANGE)
+    # ── Hintergrund: abgerundetes Rechteck ──────────────────────────
+    r = size // 5
+    d.rounded_rectangle([0, 0, size - 1, size - 1], radius=r, fill=BG)
 
-    # Download-Pfeil: Schaft + Pfeilspitze + Linie
-    cx = size // 2
-    pad = size * 0.20
+    # ── Orangener Ring ───────────────────────────────────────────────
+    cx, cy = size / 2, size / 2
+    ring_r  = size * 0.36
+    ring_w  = max(2, size * 0.09)
+    d.ellipse(
+        [cx - ring_r, cy - ring_r, cx + ring_r, cy + ring_r],
+        outline=ORANGE, width=int(ring_w)
+    )
 
-    shaft_top    = size * 0.15
-    shaft_bottom = size * 0.58
-    shaft_w      = max(2, size * 0.13)
-
-    arrow_w = size * 0.45
-    arrow_h = size * 0.22
-
-    line_y   = size * 0.80
-    line_w   = max(1, size * 0.09)
+    # ── Weißer Pfeil (Schaft + Spitze + Linie) ───────────────────────
+    shaft_w = max(2, size * 0.11)
+    shaft_t = cy - ring_r * 0.55
+    shaft_b = cy + ring_r * 0.15
+    arr_w   = ring_r * 0.75
+    arr_h   = ring_r * 0.48
+    line_y  = cy + ring_r * 0.58
+    line_hw = ring_r * 0.55
+    line_h  = max(2, size * 0.08)
 
     # Schaft
-    d.rectangle([cx - shaft_w / 2, shaft_top,
-                 cx + shaft_w / 2, shaft_bottom], fill=WHITE)
-
-    # Pfeilspitze (Dreieck)
+    d.rectangle(
+        [cx - shaft_w / 2, shaft_t, cx + shaft_w / 2, shaft_b],
+        fill=WHITE
+    )
+    # Pfeilspitze
     d.polygon([
-        (cx - arrow_w / 2, shaft_bottom),
-        (cx + arrow_w / 2, shaft_bottom),
-        (cx,               shaft_bottom + arrow_h),
+        (cx - arr_w, shaft_b),
+        (cx + arr_w, shaft_b),
+        (cx, shaft_b + arr_h),
     ], fill=WHITE)
-
-    # Unterstrich-Linie
-    d.rectangle([pad, line_y, size - pad, line_y + line_w], fill=WHITE)
+    # Linie
+    d.rectangle(
+        [cx - line_hw, line_y, cx + line_hw, line_y + line_h],
+        fill=WHITE
+    )
 
     return img
 
